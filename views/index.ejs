@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= typeof title !== 'undefined' ? title : 'Consultancy Service Portal' %></title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <%- include('partials/navbar') %>
+    <main>
+<div class="container my-5">
+    <!-- Hero Section -->
+    <div class="row align-items-center mb-5">
+        <div class="col-lg-6">
+            <h1 class="display-4 fw-bold mb-4">Find Skilled Workers Near You</h1>
+            <p class="lead mb-4">Connect with professional plumbers, electricians, carpenters, tutors, and more in your local area.</p>
+            
+            <!-- Skill Search Bar - Only for clients or non-authenticated users -->
+            <% if (!isAuthenticated || userRole === 'client') { %>
+                <div class="card shadow-sm mb-4">
+                    <div class="card-body">
+                        <h5 class="card-title mb-3"><i class="bi bi-search"></i> Search by Skill</h5>
+                        <form action="/client/search" method="GET">
+                            <div class="input-group input-group-lg">
+                                <select class="form-select" name="category" id="skillSearch">
+                                    <option value="">All Skills</option>
+                                    <option value="Plumbing">Plumbing</option>
+                                    <option value="Electrical">Electrical</option>
+                                    <option value="Carpentry">Carpentry</option>
+                                    <option value="Tutoring">Tutoring</option>
+                                    <option value="Cleaning">Cleaning</option>
+                                    <option value="Painting">Painting</option>
+                                    <option value="Gardening">Gardening</option>
+                                    <option value="HVAC">HVAC</option>
+                                    <option value="Roofing">Roofing</option>
+                                    <option value="Flooring">Flooring</option>
+                                    <option value="Other">Other</option>
+                                </select>
+                                <input type="text" class="form-control" name="location" placeholder="Enter location (optional)">
+                                <button class="btn btn-primary" type="submit">
+                                    <i class="bi bi-search"></i> Search Workers
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            <% } %>
+
+            <% if (isAuthenticated) { %>
+                <% if (userRole === 'client') { %>
+                    <a href="/client/search" class="btn btn-primary btn-lg me-2">Browse All Services</a>
+                    <a href="/client/dashboard" class="btn btn-outline-primary btn-lg">Go to Dashboard</a>
+                <% } else if (userRole === 'worker') { %>
+                    <a href="/worker/dashboard" class="btn btn-primary btn-lg me-2">Go to Dashboard</a>
+                    <a href="/worker/requests" class="btn btn-outline-primary btn-lg">View Requests</a>
+                <% } else if (userRole === 'admin') { %>
+                    <a href="/admin/dashboard" class="btn btn-primary btn-lg me-2">Admin Dashboard</a>
+                <% } %>
+            <% } else { %>
+                <a href="/client/search" class="btn btn-primary btn-lg me-2">Browse All Services</a>
+                <a href="/register" class="btn btn-outline-primary btn-lg">Register Now</a>
+            <% } %>
+        </div>
+        <div class="col-lg-6">
+            <img src="https://via.placeholder.com/600x400" alt="Services" class="img-fluid rounded">
+        </div>
+    </div>
+
+    <!-- Service Categories - Only for clients or non-authenticated users -->
+    <% if (!isAuthenticated || userRole === 'client') { %>
+    <div class="row mb-5">
+        <div class="col-12">
+            <h2 class="text-center mb-4">Service Categories</h2>
+            <p class="text-center text-muted mb-4">Click on any category to search for workers</p>
+        </div>
+        <div class="col-md-3 mb-4">
+            <a href="/client/search?category=Plumbing" class="text-decoration-none">
+                <div class="card h-100 text-center skill-card">
+                    <div class="card-body">
+                        <i class="bi bi-wrench display-4 text-primary"></i>
+                        <h5 class="card-title mt-3">Plumbing</h5>
+                        <p class="card-text">Expert plumbers for all your plumbing needs</p>
+                    </div>
+                </div>
+            </a>
+        </div>
+        <div class="col-md-3 mb-4">
+            <a href="/client/search?category=Electrical" class="text-decoration-none">
+                <div class="card h-100 text-center skill-card">
+                    <div class="card-body">
+                        <i class="bi bi-lightning-charge display-4 text-warning"></i>
+                        <h5 class="card-title mt-3">Electrical</h5>
+                        <p class="card-text">Licensed electricians for safe electrical work</p>
+                    </div>
+                </div>
+            </a>
+        </div>
+        <div class="col-md-3 mb-4">
+            <a href="/client/search?category=Carpentry" class="text-decoration-none">
+                <div class="card h-100 text-center skill-card">
+                    <div class="card-body">
+                        <i class="bi bi-hammer display-4 text-success"></i>
+                        <h5 class="card-title mt-3">Carpentry</h5>
+                        <p class="card-text">Skilled carpenters for woodwork projects</p>
+                    </div>
+                </div>
+            </a>
+        </div>
+        <div class="col-md-3 mb-4">
+            <a href="/client/search?category=Tutoring" class="text-decoration-none">
+                <div class="card h-100 text-center skill-card">
+                    <div class="card-body">
+                        <i class="bi bi-book display-4 text-info"></i>
+                        <h5 class="card-title mt-3">Tutoring</h5>
+                        <p class="card-text">Qualified tutors for various subjects</p>
+                    </div>
+                </div>
+            </a>
+        </div>
+        <div class="col-md-3 mb-4">
+            <a href="/client/search?category=Cleaning" class="text-decoration-none">
+                <div class="card h-100 text-center skill-card">
+                    <div class="card-body">
+                        <i class="bi bi-broom display-4 text-secondary"></i>
+                        <h5 class="card-title mt-3">Cleaning</h5>
+                        <p class="card-text">Professional cleaning services</p>
+                    </div>
+                </div>
+            </a>
+        </div>
+        <div class="col-md-3 mb-4">
+            <a href="/client/search?category=Painting" class="text-decoration-none">
+                <div class="card h-100 text-center skill-card">
+                    <div class="card-body">
+                        <i class="bi bi-palette display-4 text-danger"></i>
+                        <h5 class="card-title mt-3">Painting</h5>
+                        <p class="card-text">Expert painters for your projects</p>
+                    </div>
+                </div>
+            </a>
+        </div>
+        <div class="col-md-3 mb-4">
+            <a href="/client/search?category=Gardening" class="text-decoration-none">
+                <div class="card h-100 text-center skill-card">
+                    <div class="card-body">
+                        <i class="bi bi-flower1 display-4 text-success"></i>
+                        <h5 class="card-title mt-3">Gardening</h5>
+                        <p class="card-text">Landscaping and gardening experts</p>
+                    </div>
+                </div>
+            </a>
+        </div>
+        <div class="col-md-3 mb-4">
+            <a href="/client/search?category=HVAC" class="text-decoration-none">
+                <div class="card h-100 text-center skill-card">
+                    <div class="card-body">
+                        <i class="bi bi-thermometer-half display-4 text-primary"></i>
+                        <h5 class="card-title mt-3">HVAC</h5>
+                        <p class="card-text">Heating and cooling specialists</p>
+                    </div>
+                </div>
+            </a>
+        </div>
+    </div>
+    <% } %>
+
+    <!-- How It Works -->
+    <div class="row mb-5">
+        <div class="col-12">
+            <h2 class="text-center mb-4">How It Works</h2>
+        </div>
+        <div class="col-md-4 text-center mb-4">
+            <div class="mb-3">
+                <span class="badge bg-primary rounded-circle p-3 fs-4">1</span>
+            </div>
+            <h4>Search & Browse</h4>
+            <p>Search for skilled workers in your area by category, location, and rating.</p>
+        </div>
+        <div class="col-md-4 text-center mb-4">
+            <div class="mb-3">
+                <span class="badge bg-primary rounded-circle p-3 fs-4">2</span>
+            </div>
+            <h4>Book Service</h4>
+            <p>Send a booking request with your service requirements and preferred date.</p>
+        </div>
+        <div class="col-md-4 text-center mb-4">
+            <div class="mb-3">
+                <span class="badge bg-primary rounded-circle p-3 fs-4">3</span>
+            </div>
+            <h4>Get Service Done</h4>
+            <p>Worker accepts your request and completes the service. Pay securely and rate your experience.</p>
+        </div>
+    </div>
+</div>
+    </main>
+    <%- include('partials/footer') %>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/js/main.js"></script>
+</body>
+</html>
+

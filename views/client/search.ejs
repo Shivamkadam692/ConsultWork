@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %></title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+          integrity="sha256-p4NxAoJBhIIN+hmNHrzRCf9tD/miZyoHS5obTRR9BMY="
+          crossorigin=""/>
+    <link rel="stylesheet" href="/css/style.css">
+    <style>
+        #map {
+            height: 500px;
+            width: 100%;
+            border-radius: 8px;
+            background-color: #f0f0f0; /* Light gray background to ensure visibility */
+        }
+        .map-container {
+            position: relative;
+        }
+        .map-controls {
+            position: absolute;
+            top: 10px;
+            right: 10px;
+            z-index: 1000;
+            background: white;
+            padding: 10px;
+            border-radius: 5px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+    </style>
+</head>
+<body>
+    <%- include('../partials/navbar') %>
+    <main>
+        <div class="container my-5">
+            <h1 class="mb-4">Search Workers</h1>
+            
+            <!-- Search Filters -->
+            <div class="card mb-4">
+                <div class="card-body">
+                    <form method="GET" action="/client/search">
+                        <div class="row">
+                            <div class="col-md-3 mb-3">
+                                <label class="form-label">Skill Category</label>
+                                <select class="form-select" name="category">
+                                    <option value="">All Skills</option>
+                                    <option value="Plumbing" <%= filters.category === 'Plumbing' ? 'selected' : '' %>>Plumbing</option>
+                                    <option value="Electrical" <%= filters.category === 'Electrical' ? 'selected' : '' %>>Electrical</option>
+                                    <option value="Carpentry" <%= filters.category === 'Carpentry' ? 'selected' : '' %>>Carpentry</option>
+                                    <option value="Tutoring" <%= filters.category === 'Tutoring' ? 'selected' : '' %>>Tutoring</option>
+                                    <option value="Cleaning" <%= filters.category === 'Cleaning' ? 'selected' : '' %>>Cleaning</option>
+                                    <option value="Painting" <%= filters.category === 'Painting' ? 'selected' : '' %>>Painting</option>
+                                    <option value="Gardening" <%= filters.category === 'Gardening' ? 'selected' : '' %>>Gardening</option>
+                                    <option value="HVAC" <%= filters.category === 'HVAC' ? 'selected' : '' %>>HVAC</option>
+                                    <option value="Roofing" <%= filters.category === 'Roofing' ? 'selected' : '' %>>Roofing</option>
+                                    <option value="Flooring" <%= filters.category === 'Flooring' ? 'selected' : '' %>>Flooring</option>
+                                    <option value="Other" <%= filters.category === 'Other' ? 'selected' : '' %>>Other</option>
+                                </select>
+                            </div>
+                            <div class="col-md-3 mb-3">
+                                <label class="form-label">Location</label>
+                                <input type="text" class="form-control" name="location" value="<%= filters.location || '' %>" placeholder="City or Area">
+                            </div>
+                            <div class="col-md-2 mb-3">
+                                <label class="form-label">Min Rating</label>
+                                <input type="number" class="form-control" name="rating" value="<%= filters.rating || '' %>" min="1" max="5" step="0.1">
+                            </div>
+                            <div class="col-md-2 mb-3">
+                                <label class="form-label">Max Budget</label>
+                                <input type="number" class="form-control" name="budget" value="<%= filters.budget || '' %>" placeholder="$">
+                            </div>
+                            <div class="col-md-2 mb-3 d-flex align-items-end">
+                                <button type="submit" class="btn btn-primary w-100">Search</button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+
+
+            <!-- View Toggle -->
+            <div class="mb-3 d-flex justify-content-end">
+                <div class="btn-group" role="group">
+                    <button type="button" class="btn btn-outline-primary active" id="listViewBtn">
+                        <i class="bi bi-list"></i> List View
+                    </button>
+                    <button type="button" class="btn btn-outline-primary" id="mapViewBtn">
+                        <i class="bi bi-map"></i> Map View
+                    </button>
+                </div>
+            </div>
+
+            <!-- Map View -->
+            <div id="mapView" style="display: none;">
+                <div class="card mb-4">
+                    <div class="card-body p-0">
+                        <div class="map-container">
+                            <div id="map"></div>
+                            <div class="map-controls">
+                                <button class="btn btn-sm btn-primary mb-2" id="locateBtn">
+                                    <i class="bi bi-geo-alt"></i> My Location
+                                </button>
+                                <br>
+                                <button class="btn btn-sm btn-secondary" id="refreshBtn">
+                                    <i class="bi bi-arrow-clockwise"></i> Refresh
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            
+
+
+            <!-- List View -->
+            <div id="listView">
+                <div class="row">
+                    <% if (workers.length > 0) { %>
+                        <% workers.forEach(worker => { %>
+                            <div class="col-md-4 mb-4 worker-card" 
+                                 data-worker-id="<%= worker._id %>"
+                                 data-lat="<%= worker.address?.coordinates?.latitude || '' %>"
+                                 data-lng="<%= worker.address?.coordinates?.longitude || '' %>"
+                                 data-name="<%= worker.firstName %> <%= worker.lastName %>"
+                                 data-rating="<%= worker.averageRating %>"
+                                 data-city="<%= worker.address?.city || 'N/A' %>"
+                                 data-rate="<%= worker.rates?.hourly || 'N/A' %>">
+                                <div class="card h-100">
+                                    <div class="card-body">
+                                        <div class="d-flex align-items-center mb-3">
+                                            <img src="<%= worker.profileImage || '/images/default-avatar.png' %>" alt="Profile" class="rounded-circle me-3" width="60" height="60">
+                                            <div>
+                                                <h5 class="mb-0"><%= worker.firstName %> <%= worker.lastName %></h5>
+                                                <div class="text-warning">
+                                                    <% for (let i = 0; i < 5; i++) { %>
+                                                        <i class="bi bi-star<%= i < Math.round(worker.averageRating) ? '-fill' : '' %>" ></i>
+                                                    <% } %>
+                                                    <span class="text-muted ms-1">(<%= worker.averageRating.toFixed(1) %>)</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <p class="text-muted mb-2"><i class="bi bi-geo-alt"></i> 
+                                            <% if (worker.address?.city) { %>
+                                                <%= worker.address.city %>
+                                            <% } else if (worker.serviceAreas && worker.serviceAreas.length > 0) { %>
+                                                Serves: 
+                                                <% worker.serviceAreas.slice(0, 2).forEach((area, index) => { %>
+                                                    <%= area.city %><%= index < worker.serviceAreas.slice(0, 2).length - 1 ? ', ' : '' %>
+                                                <% }); %>
+                                                <% if (worker.serviceAreas.length > 2) { %>
+                                                    (+<%= worker.serviceAreas.length - 2 %> more)
+                                                <% } %>
+                                            <% } else { %>
+                                                Location not specified
+                                            <% } %>
+                                        </p>
+                                        <% if (worker.skills && worker.skills.length > 0) { %>
+                                            <p class="mb-2">
+                                                <% worker.skills.slice(0, 3).forEach((skill, index) => { %>
+                                                    <span class="badge bg-primary me-1"><%= skill.category %></span>
+                                                <% }); %>
+                                                <% if (worker.skills.length > 3) { %>
+                                                    <span class="badge bg-secondary">+<%= worker.skills.length - 3 %> more</span>
+                                                <% } %>
+                                            </p>
+                                        <% } %>
+                                        <% if (worker.rates?.hourly) { %>
+                                            <p class="mb-2"><strong>$<%= worker.rates.hourly %></strong>/hour</p>
+                                        <% } %>
+                                        <a href="/client/worker/<%= worker._id %>" class="btn btn-primary btn-sm">View Profile</a>
+                                    </div>
+                                </div>
+                            </div>
+                        <% }); %>
+                    <% } else { %>
+                        <div class="col-12">
+                            <div class="alert alert-info">No workers found. Try adjusting your search filters.</div>
+                        </div>
+                    <% } %>
+                </div>
+            </div>
+
+            <!-- Pagination -->
+            <% if (totalPages > 1) { %>
+                <nav>
+                    <ul class="pagination justify-content-center">
+                        <% for (let i = 1; i <= totalPages; i++) { %>
+                            <li class="page-item <%= i === currentPage ? 'active' : '' %>">
+                                <a class="page-link" href="?page=<%= i %>&category=<%= filters.category || '' %>&location=<%= filters.location || '' %>"><%= i %></a>
+                            </li>
+                        <% } %>
+                    </ul>
+                </nav>
+            <% } %>
+        </div>
+    </main>
+    <%- include('../partials/footer') %>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+            integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
+            crossorigin=""></script>
+    <script src="/js/main.js"></script>
+    <script>
+        // Initialize map
+        let map;
+        let markers = [];
+        let userMarker = null;
+        let userLocation = null;
+    
+        // Map will be initialized when user clicks map view button
+    
+        // Initialize Leaflet map
+        function initMap() {
+            // Default center (can be changed based on user location or search location)
+            const defaultLat = 40.7128; // New York default
+            const defaultLng = -74.0060;
+        
+            // Try to get user's location
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                        userLocation = {
+                            lat: position.coords.latitude,
+                            lng: position.coords.longitude
+                        };
+                        createMap(userLocation.lat, userLocation.lng);
+                    },
+                    () => {
+                        // If geolocation fails, use default location
+                        createMap(defaultLat, defaultLng);
+                    }
+                );
+            } else {
+                createMap(defaultLat, defaultLng);
+            }
+        }
+    
+        function createMap(centerLat, centerLng) {
+            // Create map
+            map = L.map('map').setView([centerLat, centerLng], 12);
+        
+            // Add OpenStreetMap tiles
+            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+                attribution: '© OpenStreetMap contributors',
+                maxZoom: 19
+            }).addTo(map);
+        
+            // Add user location marker if available
+            if (userLocation) {
+                userMarker = L.marker([userLocation.lat, userLocation.lng], {
+                    icon: L.icon({
+                        iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-blue.png',
+                        shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
+                        iconSize: [25, 41],
+                        iconAnchor: [12, 41],
+                        popupAnchor: [1, -34],
+                        shadowSize: [41, 41]
+                    })
+                }).addTo(map)
+                .bindPopup('<b>Your Location</b>').openPopup();
+            }
+        
+            // Load workers from API
+            loadWorkers();
+        }
+    
+        function loadWorkers() {
+            // Get user location for nearby search
+            let url = '/public/api/workers/map';
+            if (userLocation) {
+                url += `?lat=${userLocation.lat}&lng=${userLocation.lng}&radius=50`;
+            }
+        
+            // Fetch workers from API
+            fetch(url)
+                .then(response => response.json())
+                .then(workers => {
+                    if (workers.success === false) {
+                        console.error('Error:', workers.message);
+                        return;
+                    }
+        
+                    workers.forEach(worker => {
+                        if (worker.lat && worker.lng) {
+                            addWorkerMarker(worker);
+                        }
+                    });
+        
+                    if (markers.length > 0) {
+                        const group = new L.featureGroup(markers);
+                        if (userMarker) {
+                            group.addLayer(userMarker);
+                        }
+                        map.fitBounds(group.getBounds().pad(0.1));
+                    } else {
+                        // If no workers found, show message
+                        L.popup()
+                            .setLatLng([map.getCenter().lat, map.getCenter().lng])
+                            .setContent('<p>No workers found in this area.</p>')
+                            .openOn(map);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error loading workers:', error);
+                });
+        }
+    
+        function addWorkerMarker(worker) {
+            const customIcon = L.divIcon({
+                className: 'custom-worker-marker',
+                html: `<div style="background-color: #007bff; color: white; border-radius: 50%; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; font-weight: bold; border: 3px solid white; box-shadow: 0 2px 5px rgba(0,0,0,0.3);">
+                        <span>${worker.rating ? worker.rating.toFixed(1) : 'N/A'}</span>
+                      </div>` ,
+                iconSize: [40, 40],
+                iconAnchor: [20, 40],
+                popupAnchor: [0, -40]
+            });
+        
+            const marker = L.marker([worker.lat, worker.lng], { icon: customIcon })
+                .addTo(map)
+                .bindPopup(`
+                    <div style="min-width: 200px;">
+                        <h6 style="margin: 0 0 5px 0;">${worker.name}</h6>
+                        <p style="margin: 0 0 5px 0; color: #666;">
+                            <i class="bi bi-star-fill" style="color: #ffc107;"></i> ${worker.rating ? worker.rating.toFixed(1) : 'N/A'} Rating
+                        </p>
+                        <p style="margin: 0 0 5px 0; color: #666;">
+                            <i class="bi bi-geo-alt"></i> ${worker.city || 'N/A'}
+                        </p>
+                        ${worker.serviceAreas && worker.serviceAreas.length > 0 ? `
+                        <p style="margin: 0 0 5px 0; color: #666;">
+                            <i class="bi bi-pin-map"></i> Serves: 
+                            ${worker.serviceAreas.slice(0, 2).map((area, index) => 
+                              `${area.city}${index < worker.serviceAreas.slice(0, 2).length - 1 ? ', ' : ''}`
+                            ).join('')}
+                            ${worker.serviceAreas.length > 2 ? ` (+${worker.serviceAreas.length - 2} more)` : ''}
+                        </p>` : ''}
+                        <p style="margin: 0 0 10px 0; color: #666;">
+                            <strong>$${worker.rate || 'N/A'}</strong>/hour
+                        </p>
+                        <a href="/client/worker/${worker.id}" class="btn btn-primary btn-sm" style="width: 100%;">
+                            View Profile
+                        </a>
+                    </div>
+                `);
+        
+            marker.on('click', function() {
+                map.setView([worker.lat, worker.lng], 15);
+            });
+        
+            markers.push(marker);
+        }
+
+        // Locate button
+        document.getElementById('locateBtn').addEventListener('click', () => {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                        const lat = position.coords.latitude;
+                        const lng = position.coords.longitude;
+                        
+                        if (userMarker) {
+                            userMarker.setLatLng([lat, lng]);
+                        } else {
+                            userMarker = L.marker([lat, lng], {
+                                icon: L.icon({
+                                    iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-blue.png',
+                                    shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
+                                    iconSize: [25, 41],
+                                    iconAnchor: [12, 41],
+                                    popupAnchor: [1, -34],
+                                    shadowSize: [41, 41]
+                                })
+                            }).addTo(map)
+                            .bindPopup('<b>Your Location</b>').openPopup();
+                        }
+                        
+                        map.setView([lat, lng], 15);
+                    },
+                    () => {
+                        alert('Unable to get your location. Please enable location services.');
+                    }
+                );
+            } else {
+                alert('Geolocation is not supported by your browser.');
+            }
+        });
+
+        // Refresh button
+        document.getElementById('refreshBtn').addEventListener('click', () => {
+            if (map) {
+                markers.forEach(marker => map.removeLayer(marker));
+                markers = [];
+                loadWorkers();
+            }
+        });
+        // View toggle
+        const listViewBtn = document.getElementById('listViewBtn');
+        const mapViewBtn = document.getElementById('mapViewBtn');
+        const listView = document.getElementById('listView');
+        const mapView = document.getElementById('mapView');
+
+        listViewBtn.addEventListener('click', () => {
+            listViewBtn.classList.add('active');
+            mapViewBtn.classList.remove('active');
+            listView.style.display = 'block';
+            mapView.style.display = 'none';
+        });
+
+        mapViewBtn.addEventListener('click', () => {
+            mapViewBtn.classList.add('active');
+            listViewBtn.classList.remove('active');
+            listView.style.display = 'none';
+            mapView.style.display = 'block';
+            if (!map) {
+                // Ensure the map container is visible before initializing
+                setTimeout(() => {
+                    const mapContainer = document.getElementById('map');
+                    if (mapContainer && mapContainer.offsetWidth > 0 && mapContainer.offsetHeight > 0) {
+                        initMap();
+                    } else {
+                        console.warn('Map container not ready, retrying...');
+                        // Retry after a longer delay
+                        setTimeout(() => {
+                            if (!map) initMap();
+                        }, 300);
+                    }
+                }, 50);
+            }
+        });
+    </script>
+</body>
+</html>
+

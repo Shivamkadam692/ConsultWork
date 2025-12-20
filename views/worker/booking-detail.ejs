@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %></title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <%- include('../partials/navbar') %>
+    <main>
+        <div class="container my-5">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1>Booking Details</h1>
+                <a href="/worker/requests" class="btn btn-secondary">
+                    <i class="bi bi-arrow-left"></i> Back to Requests
+                </a>
+            </div>
+            
+            <!-- Toast container -->
+            <div id="toastContainer" class="position-fixed bottom-0 end-0 p-3" style="z-index: 1050;"></div>
+
+            <div class="row">
+                <div class="col-md-8">
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5 class="mb-0">Service Request</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="row mb-3">
+                                <div class="col-sm-3"><strong>Service:</strong></div>
+                                <div class="col-sm-9"><%= booking.serviceCategory %></div>
+                            </div>
+                            <div class="row mb-3">
+                                <div class="col-sm-3"><strong>Description:</strong></div>
+                                <div class="col-sm-9"><%= booking.serviceDescription %></div>
+                            </div>
+                            <div class="row mb-3">
+                                <div class="col-sm-3"><strong>Requested Date:</strong></div>
+                                <div class="col-sm-9"><%= new Date(booking.requestedDate).toLocaleDateString() %> at <%= booking.requestedTime %></div>
+                            </div>
+                            <div class="row mb-3">
+                                <div class="col-sm-3"><strong>Budget:</strong></div>
+                                <div class="col-sm-9">$<%= booking.budget %></div>
+                            </div>
+                            <div class="row mb-3">
+                                <div class="col-sm-3"><strong>Status:</strong></div>
+                                <div class="col-sm-9">
+                                    <span class="badge bg-<%= 
+                                        booking.status === 'completed' ? 'success' : 
+                                        booking.status === 'pending' ? 'warning' : 
+                                        booking.status === 'accepted' ? 'info' : 
+                                        booking.status === 'in-progress' ? 'primary' :
+                                        'secondary' 
+                                    %>"><%= booking.status %></span>
+                                </div>
+                            </div>
+                            <% if (booking.clientNotes) { %>
+                            <div class="row mb-3">
+                                <div class="col-sm-3"><strong>Client Notes:</strong></div>
+                                <div class="col-sm-9"><%= booking.clientNotes %></div>
+                            </div>
+                            <% } %>
+                        </div>
+                    </div>
+
+                    <% if (booking.location && booking.location.address) { %>
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5 class="mb-0">Service Location</h5>
+                        </div>
+                        <div class="card-body">
+                            <p><i class="bi bi-geo-alt"></i> <%= booking.location.address %></p>
+                        </div>
+                    </div>
+                    <% } %>
+
+                    <% if (booking.workerNotes) { %>
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5 class="mb-0">Your Notes</h5>
+                        </div>
+                        <div class="card-body">
+                            <p><%= booking.workerNotes %></p>
+                        </div>
+                    </div>
+                    <% } %>
+                </div>
+
+                <div class="col-md-4">
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5 class="mb-0">Client Information</h5>
+                        </div>
+                        <div class="card-body text-center">
+                            <img src="<%= booking.clientId.profileImage || '/images/default-avatar.png' %>" 
+                                 alt="Client" class="rounded-circle mb-3" width="100" height="100">
+                            <h5><%= booking.clientId.firstName %> <%= booking.clientId.lastName %></h5>
+                            <p class="text-muted">
+                                <i class="bi bi-envelope"></i> <%= booking.clientId.email %><br>
+                                <% if (booking.clientId.phone) { %>
+                                    <i class="bi bi-telephone"></i> <%= booking.clientId.phone %>
+                                <% } %>
+                            </p>
+                        </div>
+                    </div>
+
+                    <% if (booking.status === 'pending') { %>
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5 class="mb-0">Actions</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="d-grid gap-2">
+                                <button class="btn btn-success" onclick="ConsultancyPortal.handleBookingAction('<%= booking._id %>', 'accept')">
+                                    <i class="bi bi-check-circle"></i> Accept Request
+                                </button>
+                                <button class="btn btn-danger" onclick="ConsultancyPortal.handleBookingAction('<%= booking._id %>', 'reject')">
+                                    <i class="bi bi-x-circle"></i> Reject Request
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <% } else if (booking.status === 'accepted') { %>
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5 class="mb-0">Actions</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="d-grid gap-2">
+                                <button class="btn btn-primary" onclick="ConsultancyPortal.handleBookingAction('<%= booking._id %>', 'status', 'in-progress')">
+                                    <i class="bi bi-play-circle"></i> Start Work
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <% } else if (booking.status === 'in-progress') { %>
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5 class="mb-0">Actions</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="d-grid gap-2">
+                                <button class="btn btn-success" onclick="ConsultancyPortal.handleBookingAction('<%= booking._id %>', 'status', 'completed')">
+                                    <i class="bi bi-check-circle"></i> Mark as Completed
+                                </button>
+                                <button class="btn btn-danger" onclick="handleCancelWithReason('<%= booking._id %>')">
+                                    <i class="bi bi-x-circle"></i> Cancel Booking
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <% } else if (booking.status === 'accepted') { %>
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5 class="mb-0">Actions</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="d-grid gap-2">
+                                <button class="btn btn-primary" onclick="ConsultancyPortal.handleBookingAction('<%= booking._id %>', 'status', 'in-progress')">
+                                    <i class="bi bi-play-circle"></i> Start Work
+                                </button>
+                                <button class="btn btn-danger" onclick="handleCancelWithReason('<%= booking._id %>')">
+                                    <i class="bi bi-x-circle"></i> Cancel Booking
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    <% } %>
+                </div>
+            </div>
+        </div>
+    </main>
+    <%- include('../partials/footer') %>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/js/main.js"></script>
+    <script>
+        // Handle cancellation with reason prompt
+        function handleCancelWithReason(bookingId) {
+            const reason = prompt('Please provide a reason for cancelling this booking:');
+            if (reason !== null) { // User didn't cancel the prompt
+                ConsultancyPortal.handleBookingAction(bookingId, 'cancel', reason);
+            }
+        }
+    </script>
+
+</body>
+</html>
+</file_content>

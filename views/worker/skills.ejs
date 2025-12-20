@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %></title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <%- include('../partials/navbar') %>
+    <main>
+        <div class="container my-5">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1>Manage Skills & Services</h1>
+                <div>
+                    <a href="/worker/add-skills" class="btn btn-primary">
+                        <i class="bi bi-plus-circle"></i> Add Skill
+                    </a>
+                </div>
+            </div>
+            
+            <!-- Toast container -->
+            <div id="toastContainer" class="position-fixed bottom-0 end-0 p-3" style="z-index: 1050;"></div>
+            
+            <!-- Flash Messages -->
+            <% if (typeof error !== 'undefined' && error) { %>
+                <div class="alert alert-danger alert-dismissible fade show" role="alert">
+                    <%= error %>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            <% } %>
+            
+            <% if (typeof success !== 'undefined' && success) { %>
+                <div class="alert alert-success alert-dismissible fade show" role="alert">
+                    <%= success %>
+                    <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+                </div>
+            <% } %>
+
+            <!-- Current Skills -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Your Skills</h5>
+                </div>
+                <div class="card-body">
+                    <% if (worker.skills && worker.skills.length > 0) { %>
+                        <div class="row">
+                            <% worker.skills.forEach((skill, index) => { %>
+                                <div class="col-md-4 mb-3">
+                                    <div class="card">
+                                        <div class="card-body">
+                                            <h6 class="card-title"><%= skill.category %></h6>
+                                            <% if (skill.subcategory) { %>
+                                                <p class="text-muted mb-2"><small><%= skill.subcategory %></small></p>
+                                            <% } %>
+                                            <p class="mb-2">
+                                                <strong>Experience:</strong> <%= skill.experience || 0 %> years
+                                            </p>
+                                            <div class="btn-group btn-group-sm">
+                                                <button class="btn btn-outline-primary" onclick="editSkill(<%= index %>)" data-bs-toggle="modal" data-bs-target="#editSkillModal">
+                                                    <i class="bi bi-pencil"></i> Edit
+                                                </button>
+                                                <button class="btn btn-outline-danger" onclick="deleteSkillWithFeedback('<%= skill.category %>')">
+                                                    <i class="bi bi-trash"></i> Delete
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            <% }); %>
+                        </div>
+                    <% } else { %>
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle"></i> You haven't added any skills yet. Click "Add Skill" to get started.
+                        </div>
+                    <% } %>
+                </div>
+            </div>
+
+            <!-- Service Areas -->
+            <div class="card mb-4">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Service Areas</h5>
+                    <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#addAreaModal">
+                        <i class="bi bi-plus-circle"></i> Add Area
+                    </button>
+                </div>
+                <div class="card-body">
+                    <% if (worker.serviceAreas && worker.serviceAreas.length > 0) { %>
+                        <div class="row">
+                            <% worker.serviceAreas.forEach((area, index) => { %>
+                                <div class="col-md-3 mb-2">
+                                    <span class="badge bg-info p-2">
+                                        <%= area.city %> (<%= area.radius %>km)
+                                        <button class="btn-close btn-close-white ms-2" onclick="deleteAreaWithFeedback('<%= area.city %>')" style="font-size: 0.7rem;"></button>
+                                    </span>
+                                </div>
+                            <% }); %>
+                        </div>
+                    <% } else { %>
+                        <p class="text-muted">No service areas added yet.</p>
+                    <% } %>
+                </div>
+            </div>
+
+            <!-- Availability Status -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    <h5 class="mb-0">Availability Status</h5>
+                </div>
+                <div class="card-body">
+                    <form id="availabilityForm">
+                        <div class="mb-3">
+                            <label class="form-label">Current Status</label>
+                            <select class="form-select" name="status">
+                                <option value="available" <%= worker.availability?.status === 'available' ? 'selected' : '' %>>Available</option>
+                                <option value="busy" <%= worker.availability?.status === 'busy' ? 'selected' : '' %>>Busy</option>
+                                <option value="unavailable" <%= worker.availability?.status === 'unavailable' ? 'selected' : '' %>>Unavailable</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="btn btn-primary" id="availabilitySubmitBtn">Update Availability</button>
+                    </form>
+                </div>
+            </div>
+
+            <!-- Rates -->
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Service Rates</h5>
+                </div>
+                <div class="card-body">
+                    <form id="ratesForm">
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Hourly Rate ($)</label>
+                                <input type="number" class="form-control" name="hourly" 
+                                       value="<%= worker.rates?.hourly || '' %>" step="0.01" min="0" placeholder="e.g., 25.00">
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <label class="form-label">Daily Rate ($)</label>
+                                <input type="number" class="form-control" name="daily" 
+                                       value="<%= worker.rates?.daily || '' %>" step="0.01" min="0" placeholder="e.g., 200.00">
+                            </div>
+                        </div>
+                        <button type="submit" class="btn btn-primary" id="ratesSubmitBtn">Update Rates</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+
+
+        <!-- Edit Skill Modal -->
+        <div class="modal fade" id="editSkillModal" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Edit Skill</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <form id="editSkillForm">
+                        <input type="hidden" name="category" id="editSkillCategory">
+                        <div class="modal-body">
+                            <div class="mb-3">
+                                <label class="form-label">Service Category *</label>
+                                <input type="text" class="form-control" id="editSkillCategoryDisplay" readonly>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Subcategory (Optional)</label>
+                                <input type="text" class="form-control" name="subcategory" id="editSkillSubcategory">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Years of Experience *</label>
+                                <input type="number" class="form-control" name="experience" id="editSkillExperience" min="0" max="50" required>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                            <button type="submit" class="btn btn-primary" id="editSkillSubmitBtn">Update Skill</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Add Service Area Modal -->
+        <div class="modal fade" id="addAreaModal" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Add Service Area</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <form id="addAreaForm">
+                        <div class="modal-body">
+                            <div class="mb-3">
+                                <label class="form-label">City *</label>
+                                <input type="text" class="form-control" name="city" required placeholder="e.g., New York">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Service Radius (km) *</label>
+                                <input type="number" class="form-control" name="radius" min="1" max="100" value="10" required>
+                                <small class="form-text text-muted">How far are you willing to travel for service?</small>
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                            <button type="submit" class="btn btn-primary" id="addAreaSubmitBtn">Add Area</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </main>
+    <%- include('../partials/footer') %>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/js/main.js"></script>
+    <script>
+        // Handle edit skill form submission
+        document.getElementById('editSkillForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            const skillData = {
+                category: formData.get('category'),
+                subcategory: formData.get('subcategory'),
+                experience: formData.get('experience')
+            };
+            
+            const submitBtn = document.getElementById('editSkillSubmitBtn');
+            const originalText = submitBtn.innerHTML;
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Updating...';
+            
+            fetch('/worker/update-skill', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(skillData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Skill updated successfully!');
+                    // Close modal and refresh page
+                    const modalElement = document.getElementById('editSkillModal');
+                    const modal = bootstrap.Modal.getInstance(modalElement);
+                    if (modal) modal.hide();
+                    location.reload();
+                } else {
+                    alert('Error: ' + (data.message || 'Failed to update skill'));
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred. Please try again.');
+            })
+            .finally(() => {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalText;
+            });
+        });
+        
+        // Handle availability form submission
+        document.getElementById('availabilityForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            const availabilityData = {
+                status: formData.get('status')
+            };
+            
+            const submitBtn = document.getElementById('availabilitySubmitBtn');
+            const originalText = submitBtn.innerHTML;
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Updating...';
+            
+            fetch('/worker/update-availability', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(availabilityData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Availability updated successfully!');
+                    location.reload();
+                } else {
+                    alert('Error: ' + (data.message || 'Failed to update availability'));
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred. Please try again.');
+            })
+            .finally(() => {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalText;
+            });
+        });
+        
+        // Handle rates form submission
+        document.getElementById('ratesForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            const ratesData = {
+                hourly: formData.get('hourly'),
+                daily: formData.get('daily')
+            };
+            
+            const submitBtn = document.getElementById('ratesSubmitBtn');
+            const originalText = submitBtn.innerHTML;
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Updating...';
+            
+            fetch('/worker/update-rates', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(ratesData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Rates updated successfully!');
+                    location.reload();
+                } else {
+                    alert('Error: ' + (data.message || 'Failed to update rates'));
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred. Please try again.');
+            })
+            .finally(() => {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalText;
+            });
+        });
+        
+        // Handle add service area form submission
+        document.getElementById('addAreaForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(this);
+            const areaData = {
+                city: formData.get('city'),
+                radius: formData.get('radius')
+            };
+            
+            const submitBtn = document.getElementById('addAreaSubmitBtn');
+            const originalText = submitBtn.innerHTML;
+            submitBtn.disabled = true;
+            submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Adding...';
+            
+            fetch('/worker/add-service-area', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(areaData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Service area added successfully!');
+                    // Close modal and refresh page
+                    const modalElement = document.getElementById('addAreaModal');
+                    const modal = bootstrap.Modal.getInstance(modalElement);
+                    if (modal) modal.hide();
+                    location.reload();
+                } else {
+                    alert('Error: ' + (data.message || 'Failed to add service area'));
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('An error occurred. Please try again.');
+            })
+            .finally(() => {
+                submitBtn.disabled = false;
+                submitBtn.innerHTML = originalText;
+            });
+        });
+
+        function editSkill(index) {
+            const skill = <%- JSON.stringify(worker.skills) %>[index];
+            document.getElementById('editSkillCategory').value = skill.category;
+            document.getElementById('editSkillCategoryDisplay').value = skill.category;
+            document.getElementById('editSkillSubcategory').value = skill.subcategory || '';
+            document.getElementById('editSkillExperience').value = skill.experience || 0;
+        }
+
+        function deleteSkillWithFeedback(category) {
+            if (confirm(`Are you sure you want to remove "${category}" from your skills?`)) {
+                fetch('/worker/delete-skill', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ category: category })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('Skill deleted successfully!');
+                        location.reload();
+                    } else {
+                        alert('Error: ' + (data.message || 'Failed to delete skill'));
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('An error occurred. Please try again.');
+                });
+            }
+        }
+
+        function deleteAreaWithFeedback(city) {
+            if (confirm(`Remove ${city} from your service areas?`)) {
+                fetch('/worker/delete-service-area', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ city: city })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        alert('Service area deleted successfully!');
+                        location.reload();
+                    } else {
+                        alert('Error: ' + (data.message || 'Failed to delete service area'));
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    alert('An error occurred. Please try again.');
+                });
+            }
+        }
+    </script>
+</body>
+</html>

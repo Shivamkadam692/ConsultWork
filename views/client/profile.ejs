@@ -1,0 +1,181 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %></title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <%- include('../partials/navbar') %>
+    <main>
+        <div class="container my-5">
+            <div class="row">
+                <div class="col-md-4">
+                    <!-- Profile Card -->
+                    <div class="card mb-4">
+                        <div class="card-body text-center">
+                            <img src="<%= user.profileImage || '/images/default-avatar.png' %>" 
+                                 alt="Profile" class="rounded-circle mb-3" width="150" height="150" style="object-fit: cover;">
+                            <h4><%= user.firstName %> <%= user.lastName %></h4>
+                            <p class="text-muted mb-0"><%= user.email %></p>
+                            <span class="badge bg-primary mt-2">Client</span>
+                        </div>
+                    </div>
+
+                    <!-- Quick Stats -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h6 class="mb-0">Quick Stats</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between mb-3">
+                                <span>Total Bookings:</span>
+                                <strong><%= stats?.totalBookings || 0 %></strong>
+                            </div>
+                            <div class="d-flex justify-content-between mb-3">
+                                <span>Completed:</span>
+                                <strong><%= stats?.completedBookings || 0 %></strong>
+                            </div>
+                            <div class="d-flex justify-content-between">
+                                <span>Pending:</span>
+                                <strong><%= stats?.pendingBookings || 0 %></strong>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-8">
+                    <!-- Profile Information -->
+                    <div class="card mb-4">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">Profile Information</h5>
+                            <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#editProfileModal">
+                                <i class="bi bi-pencil"></i> Edit
+                            </button>
+                        </div>
+                        <div class="card-body">
+                            <div class="row mb-3">
+                                <div class="col-sm-4"><strong>First Name:</strong></div>
+                                <div class="col-sm-8"><%= user.firstName %></div>
+                            </div>
+                            <div class="row mb-3">
+                                <div class="col-sm-4"><strong>Last Name:</strong></div>
+                                <div class="col-sm-8"><%= user.lastName %></div>
+                            </div>
+                            <div class="row mb-3">
+                                <div class="col-sm-4"><strong>Email:</strong></div>
+                                <div class="col-sm-8"><%= user.email %></div>
+                            </div>
+                            <div class="row mb-3">
+                                <div class="col-sm-4"><strong>Phone:</strong></div>
+                                <div class="col-sm-8"><%= user.phone || 'Not provided' %></div>
+                            </div>
+                            <div class="row mb-3">
+                                <div class="col-sm-4"><strong>Address:</strong></div>
+                                <div class="col-sm-8">
+                                    <% if (user.address) { %>
+                                        <%= user.address.street || '' %> <%= user.address.city || '' %> <%= user.address.state || '' %> <%= user.address.zipCode || '' %>
+                                    <% } else { %>
+                                        Not provided
+                                    <% } %>
+                                </div>
+                            </div>
+                            <div class="row mb-3">
+                                <div class="col-sm-4"><strong>Account Status:</strong></div>
+                                <div class="col-sm-8">
+                                    <% if (user.isVerified) { %>
+                                        <span class="badge bg-success">Verified</span>
+                                    <% } else { %>
+                                        <span class="badge bg-warning">Not Verified</span>
+                                    <% } %>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-sm-4"><strong>Member Since:</strong></div>
+                                <div class="col-sm-8"><%= new Date(user.createdAt).toLocaleDateString() %></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Account Settings -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">Account Settings</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="d-grid gap-2">
+                                <a href="/client/bookings" class="btn btn-outline-primary">
+                                    <i class="bi bi-calendar-check"></i> View My Bookings
+                                </a>
+                                <a href="/client/payments" class="btn btn-outline-primary">
+                                    <i class="bi bi-credit-card"></i> Payment History
+                                </a>
+                                <a href="/client/search" class="btn btn-outline-primary">
+                                    <i class="bi bi-search"></i> Search Workers
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Edit Profile Modal -->
+        <div class="modal fade" id="editProfileModal" tabindex="-1">
+            <div class="modal-dialog">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Edit Profile</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <form action="/client/profile" method="POST">
+                        <div class="modal-body">
+                            <div class="mb-3">
+                                <label class="form-label">First Name</label>
+                                <input type="text" class="form-control" name="firstName" value="<%= user.firstName %>" required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Last Name</label>
+                                <input type="text" class="form-control" name="lastName" value="<%= user.lastName %>" required>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Phone</label>
+                                <input type="tel" class="form-control" name="phone" value="<%= user.phone || '' %>">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Street Address</label>
+                                <input type="text" class="form-control" name="address[street]" value="<%= user.address?.street || '' %>">
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">City</label>
+                                    <input type="text" class="form-control" name="address[city]" value="<%= user.address?.city || '' %>">
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">State</label>
+                                    <input type="text" class="form-control" name="address[state]" value="<%= user.address?.state || '' %>">
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Zip Code</label>
+                                <input type="text" class="form-control" name="address[zipCode]" value="<%= user.address?.zipCode || '' %>">
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                            <button type="submit" class="btn btn-primary">Save Changes</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </main>
+    <%- include('../partials/footer') %>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/js/main.js"></script>
+</body>
+</html>
+

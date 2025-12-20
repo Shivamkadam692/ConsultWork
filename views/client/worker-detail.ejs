@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %></title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <%- include('../partials/navbar') %>
+    <main>
+        <div class="container my-5">
+            <div class="row">
+                <div class="col-md-8">
+                    <!-- Worker Profile -->
+                    <div class="card mb-4">
+                        <div class="card-body">
+                            <div class="d-flex align-items-center mb-4">
+                                <img src="<%= worker.profileImage || '/images/default-avatar.png' %>" 
+                                     alt="Profile" class="rounded-circle me-4" width="120" height="120">
+                                <div>
+                                    <h2><%= worker.firstName %> <%= worker.lastName %></h2>
+                                    <div class="text-warning mb-2">
+                                        <% for (let i = 0; i < 5; i++) { %>
+                                            <i class="bi bi-star<%= i < Math.round(worker.averageRating) ? '-fill' : '' %>"></i>
+                                        <% } %>
+                                        <span class="text-muted ms-2">(<%= worker.averageRating.toFixed(1) %>) - <%= completedBookings %> completed jobs</span>
+                                    </div>
+                                    <p class="text-muted mb-0"><i class="bi bi-geo-alt"></i> <%= worker.address?.city || 'N/A' %></p>
+                                </div>
+                            </div>
+
+
+
+                            <!-- Skills -->
+                            <% if (worker.skills && worker.skills.length > 0) { %>
+                                <h5>Skills</h5>
+                                <div class="mb-3">
+                                    <% worker.skills.forEach(skill => { %>
+                                        <span class="badge bg-primary me-2"><%= skill.category %></span>
+                                    <% }); %>
+                                </div>
+                            <% } %>
+
+                            <!-- Rates -->
+                            <% if (worker.rates) { %>
+                                <h5>Rates</h5>
+                                <ul class="list-unstyled mb-3">
+                                    <% if (worker.rates.hourly) { %>
+                                        <li><strong>Hourly:</strong> $<%= worker.rates.hourly %>/hour</li>
+                                    <% } %>
+                                    <% if (worker.rates.daily) { %>
+                                        <li><strong>Daily:</strong> $<%= worker.rates.daily %>/day</li>
+                                    <% } %>
+                                </ul>
+                            <% } %>
+                        </div>
+                    </div>
+
+                    <!-- Reviews -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">Reviews</h5>
+                        </div>
+                        <div class="card-body">
+                            <% if (reviews.length > 0) { %>
+                                <% reviews.forEach(review => { %>
+                                    <div class="mb-4 pb-4 border-bottom">
+                                        <div class="d-flex align-items-center mb-2">
+                                            <img src="<%= review.clientId.profileImage || '/images/default-avatar.png' %>" 
+                                                 alt="Client" class="rounded-circle me-2" width="40" height="40">
+                                            <div>
+                                                <strong><%= review.clientId.firstName %> <%= review.clientId.lastName %></strong>
+                                                <div class="text-warning">
+                                                    <% for (let i = 0; i < 5; i++) { %>
+                                                        <i class="bi bi-star<%= i < review.rating ? '-fill' : '' %>"></i>
+                                                    <% } %>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <p class="mb-2"><%= review.reviewText %></p>
+                                        <small class="text-muted"><%= new Date(review.createdAt).toLocaleDateString() %></small>
+                                        <% if (review.workerResponse) { %>
+                                            <div class="mt-3 p-3 bg-light rounded">
+                                                <strong>Worker Response:</strong>
+                                                <p class="mb-0"><%= review.workerResponse.text %></p>
+                                            </div>
+                                        <% } %>
+                                    </div>
+                                <% }); %>
+                            <% } else { %>
+                                <p class="text-muted">No reviews yet.</p>
+                            <% } %>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-4">
+                    <!-- Booking Card -->
+                    <div class="card sticky-top" style="top: 20px;">
+                        <div class="card-body">
+                            <h5 class="card-title">Book Service</h5>
+                            <form id="bookingForm">
+                                <input type="hidden" name="workerId" value="<%= worker._id %>">
+                                <div class="mb-3">
+                                    <label class="form-label">Service Category</label>
+                                    <input type="text" class="form-control" name="serviceCategory" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Date</label>
+                                    <input type="date" class="form-control" name="requestedDate" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Time</label>
+                                    <input type="time" class="form-control" name="requestedTime" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Budget ($)</label>
+                                    <input type="number" class="form-control" name="budget" min="0" step="0.01" required>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Service Description (minimum 10 characters)</label>
+                                    <textarea class="form-control" name="serviceDescription" rows="3" minlength="10" required placeholder="Please describe the service you need in detail..."></textarea>
+                                </div>
+                                <div class="mb-3">
+                                    <label class="form-label">Address</label>
+                                    <input type="text" class="form-control" name="address" required>
+                                </div>
+                                <button type="submit" class="btn btn-primary w-100" id="bookingSubmitBtn">Send Booking Request</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+    <%- include('../partials/footer') %>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/js/main.js"></script>
+</body>
+</html>
+

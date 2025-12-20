@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %></title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.0/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <%- include('../partials/navbar') %>
+    <main>
+        <div class="container my-5">
+            <div class="row">
+                <div class="col-md-4">
+                    <!-- Profile Card -->
+                    <div class="card mb-4">
+                        <div class="card-body text-center">
+                            <img src="<%= worker.profileImage || '/images/default-avatar.png' %>" 
+                                 alt="Profile" class="rounded-circle mb-3" width="150" height="150" style="object-fit: cover;">
+                            <h4><%= worker.firstName %> <%= worker.lastName %></h4>
+                            <p class="text-muted mb-2"><%= worker.email %></p>
+                            <div class="mb-2">
+                                <span class="badge bg-primary">Worker</span>
+                                <% if (worker.verificationStatus === 'verified') { %>
+                                    <span class="badge bg-success">Verified</span>
+                                <% } else if (worker.verificationStatus === 'pending') { %>
+                                    <span class="badge bg-warning">Pending Verification</span>
+                                <% } %>
+                            </div>
+                            <div class="text-warning mb-2">
+                                <% for (let i = 0; i < 5; i++) { %>
+                                    <i class="bi bi-star<%= i < Math.round(worker.averageRating) ? '-fill' : '' %>"></i>
+                                <% } %>
+                                <span class="text-muted ms-1">(<%= worker.averageRating.toFixed(1) %>)</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Quick Stats -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h6 class="mb-0">Quick Stats</h6>
+                        </div>
+                        <div class="card-body">
+                            <div class="d-flex justify-content-between mb-3">
+                                <span>Total Bookings:</span>
+                                <strong><%= worker.totalBookings || 0 %></strong>
+                            </div>
+                            <div class="d-flex justify-content-between mb-3">
+                                <span>Total Earnings:</span>
+                                <strong>$<%= (worker.totalEarnings || 0).toFixed(2) %></strong>
+                            </div>
+                            <div class="d-flex justify-content-between">
+                                <span>Average Rating:</span>
+                                <strong><%= worker.averageRating.toFixed(1) %> ⭐</strong>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="col-md-8">
+                    <!-- Profile Information -->
+                    <div class="card mb-4">
+                        <div class="card-header d-flex justify-content-between align-items-center">
+                            <h5 class="mb-0">Profile Information</h5>
+                            <button class="btn btn-sm btn-primary" data-bs-toggle="modal" data-bs-target="#editProfileModal">
+                                <i class="bi bi-pencil"></i> Edit
+                            </button>
+                        </div>
+                        <div class="card-body">
+                            <div class="row mb-3">
+                                <div class="col-sm-4"><strong>First Name:</strong></div>
+                                <div class="col-sm-8"><%= worker.firstName %></div>
+                            </div>
+                            <div class="row mb-3">
+                                <div class="col-sm-4"><strong>Last Name:</strong></div>
+                                <div class="col-sm-8"><%= worker.lastName %></div>
+                            </div>
+                            <div class="row mb-3">
+                                <div class="col-sm-4"><strong>Email:</strong></div>
+                                <div class="col-sm-8"><%= worker.email %></div>
+                            </div>
+                            <div class="row mb-3">
+                                <div class="col-sm-4"><strong>Phone:</strong></div>
+                                <div class="col-sm-8"><%= worker.phone || 'Not provided' %></div>
+                            </div>
+                            <div class="row mb-3">
+                                <div class="col-sm-4"><strong>Address:</strong></div>
+                                <div class="col-sm-8">
+                                    <% if (worker.address) { %>
+                                        <%= worker.address.street || '' %> <%= worker.address.city || '' %> <%= worker.address.state || '' %> <%= worker.address.zipCode || '' %>
+                                    <% } else { %>
+                                        Not provided
+                                    <% } %>
+                                </div>
+                            </div>
+
+                            <div class="row mb-3">
+                                <div class="col-sm-4"><strong>Skills:</strong></div>
+                                <div class="col-sm-8">
+                                    <% if (worker.skills && worker.skills.length > 0) { %>
+                                        <% worker.skills.forEach(skill => { %>
+                                            <span class="badge bg-primary me-1"><%= skill.category %></span>
+                                        <% }); %>
+                                    <% } else { %>
+                                        Not specified
+                                    <% } %>
+                                </div>
+                            </div>
+                            <div class="row mb-3">
+                                <div class="col-sm-4"><strong>Rates:</strong></div>
+                                <div class="col-sm-8">
+                                    <% if (worker.rates) { %>
+                                        <% if (worker.rates.hourly) { %>
+                                            <span class="me-3">Hourly: $<%= worker.rates.hourly %></span>
+                                        <% } %>
+                                        <% if (worker.rates.daily) { %>
+                                            <span>Daily: $<%= worker.rates.daily %></span>
+                                        <% } %>
+                                    <% } else { %>
+                                        Not set
+                                    <% } %>
+                                </div>
+                            </div>
+                            <div class="row mb-3">
+                                <div class="col-sm-4"><strong>Service Areas:</strong></div>
+                                <div class="col-sm-8">
+                                    <% if (worker.serviceAreas && worker.serviceAreas.length > 0) { %>
+                                        <% worker.serviceAreas.forEach(area => { %>
+                                            <span class="badge bg-info me-1"><%= area.city %> (<%= area.radius %>km)</span>
+                                        <% }); %>
+                                    <% } else { %>
+                                        Not specified
+                                    <% } %>
+                                </div>
+                            </div>
+                            <div class="row mb-3">
+                                <div class="col-sm-4"><strong>Availability:</strong></div>
+                                <div class="col-sm-8">
+                                    <span class="badge bg-<%= worker.availability?.status === 'available' ? 'success' : worker.availability?.status === 'busy' ? 'warning' : 'secondary' %>">
+                                        <%= worker.availability?.status || 'unavailable' %>
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="col-sm-4"><strong>Member Since:</strong></div>
+                                <div class="col-sm-8"><%= new Date(worker.createdAt).toLocaleDateString() %></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Quick Actions -->
+                    <div class="card">
+                        <div class="card-header">
+                            <h5 class="mb-0">Quick Actions</h5>
+                        </div>
+                        <div class="card-body">
+                            <div class="d-grid gap-2">
+                                <a href="/worker/requests" class="btn btn-outline-primary">
+                                    <i class="bi bi-inbox"></i> View Service Requests
+                                </a>
+                                <a href="/worker/earnings" class="btn btn-outline-primary">
+                                    <i class="bi bi-cash-coin"></i> View Earnings
+                                </a>
+                                <a href="/worker/reviews" class="btn btn-outline-primary">
+                                    <i class="bi bi-star"></i> View Reviews
+                                </a>
+                                <a href="/worker/skills" class="btn btn-outline-primary">
+                                    <i class="bi bi-tools"></i> Update Your Skills
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Edit Profile Modal -->
+        <div class="modal fade" id="editProfileModal" tabindex="-1">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Edit Profile</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <form action="/worker/profile" method="POST" enctype="multipart/form-data">
+                        <div class="modal-body">
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">First Name</label>
+                                    <input type="text" class="form-control" name="firstName" value="<%= worker.firstName %>" required>
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">Last Name</label>
+                                    <input type="text" class="form-control" name="lastName" value="<%= worker.lastName %>" required>
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Phone</label>
+                                <input type="tel" class="form-control" name="phone" value="<%= worker.phone || '' %>">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Profile Image</label>
+                                <input type="file" class="form-control" name="profileImage" accept="image/*">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Street Address</label>
+                                <input type="text" class="form-control" name="address[street]" value="<%= worker.address?.street || '' %>">
+                            </div>
+                            <div class="row">
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">City</label>
+                                    <input type="text" class="form-control" name="address[city]" value="<%= worker.address?.city || '' %>">
+                                </div>
+                                <div class="col-md-6 mb-3">
+                                    <label class="form-label">State</label>
+                                    <input type="text" class="form-control" name="address[state]" value="<%= worker.address?.state || '' %>">
+                                </div>
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Zip Code</label>
+                                <input type="text" class="form-control" name="address[zipCode]" value="<%= worker.address?.zipCode || '' %>">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Hourly Rate ($)</label>
+                                <input type="number" class="form-control" name="rates[hourly]" value="<%= worker.rates?.hourly || '' %>" step="0.01" min="0">
+                            </div>
+                            <div class="mb-3">
+                                <label class="form-label">Daily Rate ($)</label>
+                                <input type="number" class="form-control" name="rates[daily]" value="<%= worker.rates?.daily || '' %>" step="0.01" min="0">
+                            </div>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                            <button type="submit" class="btn btn-primary">Save Changes</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </main>
+    <%- include('../partials/footer') %>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="/js/main.js"></script>
+</body>
+</html>
+
