@@ -609,3 +609,71 @@ exports.addSkills = async (req, res) => {
   }
 };
 
+// Handle client action (accept/reject from search)
+exports.handleClientAction = async (req, res) => {
+  try {
+    const { id: clientId, action } = req.params;
+    const { reason } = req.body;
+    const workerId = req.session.user.id;
+    
+    console.log('Handle client action request:', { clientId, action, workerId, reason });
+    
+    // Get worker details
+    const worker = await User.findById(workerId);
+    if (!worker) {
+      return res.status(404).json({
+        success: false,
+        message: 'Worker not found'
+      });
+    }
+    
+    // Get client details
+    const client = await User.findById(clientId);
+    if (!client) {
+      return res.status(404).json({
+        success: false,
+        message: 'Client not found'
+      });
+    }
+    
+    // Create notification message based on action
+    let notificationTitle, notificationMessage;
+    
+    if (action === 'accept') {
+      notificationTitle = 'Worker Accepted';
+      notificationMessage = `Worker ${worker.firstName} ${worker.lastName} has accepted your request.`;
+    } else if (action === 'reject') {
+      notificationTitle = 'Worker Rejected';
+      notificationMessage = `Worker ${worker.firstName} ${worker.lastName} has rejected your request.`;
+      if (reason) {
+        notificationMessage += ` Reason: ${reason}`;
+      }
+    } else {
+      return res.status(400).json({
+        success: false,
+        message: 'Invalid action'
+      });
+    }
+    
+    // Create notification for client
+    const { createNotification } = require('../services/notificationService');
+    await createNotification(
+      clientId,
+      'booking',
+      notificationTitle,
+      notificationMessage,
+      `/client/search`
+    );
+    
+    res.json({
+      success: true,
+      message: `Client ${action === 'accept' ? 'accepted' : 'rejected'} successfully`
+    });
+  } catch (error) {
+    console.error('Handle client action error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to process client action'
+    });
+  }
+};

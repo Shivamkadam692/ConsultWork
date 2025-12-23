@@ -2,17 +2,14 @@
 
 // Initialize tooltips and popovers
 document.addEventListener('DOMContentLoaded', function() {
-    // Bootstrap tooltips
-    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
-    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
-        return new bootstrap.Tooltip(tooltipTriggerEl);
-    });
-
-    // Bootstrap popovers
-    var popoverTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="popover"]'));
-    var popoverList = popoverTriggerList.map(function (popoverTriggerEl) {
-        return new bootstrap.Popover(popoverTriggerEl);
-    });
+    try {
+        if (window.bootstrap) {
+            var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+            tooltipTriggerList.map(function (el) { return new bootstrap.Tooltip(el); });
+            var popoverTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="popover"]'));
+            popoverTriggerList.map(function (el) { return new bootstrap.Popover(el); });
+        }
+    } catch (e) {}
 });
 
 // Form validation
@@ -31,7 +28,8 @@ async function makeRequest(url, method = 'GET', data = null) {
         method: method,
         headers: {
             'Content-Type': 'application/json',
-        }
+        },
+        credentials: 'same-origin'
     };
 
     if (data && method !== 'GET') {
@@ -40,8 +38,23 @@ async function makeRequest(url, method = 'GET', data = null) {
 
     try {
         const response = await fetch(url, options);
-        const result = await response.json();
-        return result;
+        const contentType = response.headers.get('content-type') || '';
+        if (!response.ok) {
+            let message = `Request failed (${response.status})`;
+            if (contentType.includes('application/json')) {
+                const errJson = await response.json().catch(() => null);
+                if (errJson && errJson.message) message = errJson.message;
+                return { success: false, message };
+            }
+            const errText = await response.text().catch(() => '');
+            if (errText) message = errText.substring(0, 200);
+            return { success: false, message };
+        }
+        if (contentType.includes('application/json')) {
+            const result = await response.json();
+            return result;
+        }
+        return { success: false, message: 'Unexpected response format' };
     } catch (error) {
         console.error('Request failed:', error);
         return { success: false, message: 'Request failed' };

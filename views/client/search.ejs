@@ -12,24 +12,179 @@
           crossorigin=""/>
     <link rel="stylesheet" href="/css/style.css">
     <style>
-        #map {
+        #map-container {
             height: 500px;
-            width: 100%;
-            border-radius: 8px;
-            background-color: #f0f0f0; /* Light gray background to ensure visibility */
+            transition: transform 0.5s ease, box-shadow 0.5s ease;
         }
+        
+        #map {
+            height: 100%;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            transition: transform 0.5s ease, box-shadow 0.5s ease, border-radius 0.5s ease;
+            background-color: #f0f0f0;
+        }
+        
         .map-container {
             position: relative;
         }
+        
+        /* Map controls styling */
         .map-controls {
+            display: flex;
+            gap: 0.5rem;
+            flex-wrap: wrap;
+            margin-bottom: 1rem;
+            padding: 0.5rem;
+            background: rgba(255, 255, 255, 0.8);
+            border-radius: 8px;
+            box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+        }
+        
+        .map-controls .btn {
+            padding: 0.5rem 1rem;
+            font-size: 0.85rem;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+        }
+        
+        .map-controls .btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.15);
+        }
+        
+        .view-toggle {
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+            margin-left: auto;
+        }
+        
+        .view-toggle label {
+            font-size: 0.85rem;
+            font-weight: 500;
+            color: #333;
+        }
+        
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 40px;
+            height: 20px;
+        }
+        
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+        
+        .slider {
             position: absolute;
-            top: 10px;
-            right: 10px;
-            z-index: 1000;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 20px;
+        }
+        
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 16px;
+            width: 16px;
+            left: 2px;
+            bottom: 2px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+        
+        input:checked + .slider {
+            background-color: #2196F3;
+        }
+        
+        input:checked + .slider:before {
+            transform: translateX(20px);
+        }
+        
+        /* 3D view styles */
+        .map-3d-view {
+            transform: perspective(1200px) rotateX(15deg) translateZ(50px);
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.4);
+        }
+        
+        .map-3d-view #map {
+            border-radius: 12px;
+        }
+        
+        /* Directions panel styles */
+        .directions-panel {
             background: white;
-            padding: 10px;
-            border-radius: 5px;
-            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+            padding: 1rem;
+            margin-top: 1rem;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            display: none;
+        }
+        
+        .directions-item {
+            display: flex;
+            align-items: flex-start;
+            padding: 0.75rem;
+            margin-bottom: 0.5rem;
+            border-radius: 6px;
+            background: #f8f9fa;
+            border-left: 4px solid #3b82f6;
+            transition: background 0.2s ease;
+        }
+        
+        .directions-item:hover {
+            background: #e9ecef;
+        }
+        
+        .directions-step {
+            font-weight: bold;
+            margin-right: 0.75rem;
+            color: #3b82f6;
+            min-width: 24px;
+            text-align: center;
+        }
+        
+        .directions-text {
+            flex: 1;
+        }
+        
+        .directions-distance {
+            font-size: 0.85rem;
+            color: #6c757d;
+            margin-top: 0.25rem;
+        }
+        
+        .directions-icon {
+            margin-right: 0.75rem;
+            font-size: 1.2rem;
+            color: #3b82f6;
+            min-width: 24px;
+            text-align: center;
+        }
+        
+        .directions-summary {
+            background: #e3f2fd;
+            padding: 0.75rem;
+            border-radius: 6px;
+            margin-bottom: 1rem;
+            font-weight: 500;
+        }
+        
+        .distance-box {
+            background: white;
+            padding: 8px 12px;
+            border-radius: 6px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+            font-weight: 600;
         }
     </style>
 </head>
@@ -83,37 +238,7 @@
 
 
 
-            <!-- View Toggle -->
-            <div class="mb-3 d-flex justify-content-end">
-                <div class="btn-group" role="group">
-                    <button type="button" class="btn btn-outline-primary active" id="listViewBtn">
-                        <i class="bi bi-list"></i> List View
-                    </button>
-                    <button type="button" class="btn btn-outline-primary" id="mapViewBtn">
-                        <i class="bi bi-map"></i> Map View
-                    </button>
-                </div>
-            </div>
 
-            <!-- Map View -->
-            <div id="mapView" style="display: none;">
-                <div class="card mb-4">
-                    <div class="card-body p-0">
-                        <div class="map-container">
-                            <div id="map"></div>
-                            <div class="map-controls">
-                                <button class="btn btn-sm btn-primary mb-2" id="locateBtn">
-                                    <i class="bi bi-geo-alt"></i> My Location
-                                </button>
-                                <br>
-                                <button class="btn btn-sm btn-secondary" id="refreshBtn">
-                                    <i class="bi bi-arrow-clockwise"></i> Refresh
-                                </button>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
 
             
 
@@ -173,7 +298,15 @@
                                         <% if (worker.rates?.hourly) { %>
                                             <p class="mb-2"><strong>$<%= worker.rates.hourly %></strong>/hour</p>
                                         <% } %>
-                                        <a href="/client/worker/<%= worker._id %>" class="btn btn-primary btn-sm">View Profile</a>
+                                        <div class="d-flex gap-2">
+                                            <a href="/client/worker/<%= worker._id %>" class="btn btn-primary btn-sm flex-fill">View Profile</a>
+                                            <button class="btn btn-success btn-sm" onclick="handleWorkerAction('<%= worker._id %>', 'accept')" title="Accept Worker">
+                                                <i class="bi bi-check"></i>
+                                            </button>
+                                            <button class="btn btn-danger btn-sm" onclick="handleWorkerAction('<%= worker._id %>', 'reject')" title="Reject Worker">
+                                                <i class="bi bi-x"></i>
+                                            </button>
+                                        </div>
                                     </div>
                                 </div>
                             </div>
@@ -203,238 +336,62 @@
     <%- include('../partials/footer') %>
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <!-- Leaflet JS -->
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
-            integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo="
-            crossorigin=""></script>
     <script src="/js/main.js"></script>
     <script>
-        // Initialize map
-        let map;
-        let markers = [];
-        let userMarker = null;
-        let userLocation = null;
-    
-        // Map will be initialized when user clicks map view button
-    
-        // Initialize Leaflet map
-        function initMap() {
-            // Default center (can be changed based on user location or search location)
-            const defaultLat = 40.7128; // New York default
-            const defaultLng = -74.0060;
-        
-            // Try to get user's location
-            if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(
-                    (position) => {
-                        userLocation = {
-                            lat: position.coords.latitude,
-                            lng: position.coords.longitude
-                        };
-                        createMap(userLocation.lat, userLocation.lng);
-                    },
-                    () => {
-                        // If geolocation fails, use default location
-                        createMap(defaultLat, defaultLng);
-                    }
-                );
-            } else {
-                createMap(defaultLat, defaultLng);
-            }
-        }
-    
-        function createMap(centerLat, centerLng) {
-            // Create map
-            map = L.map('map').setView([centerLat, centerLng], 12);
-        
-            // Add OpenStreetMap tiles
-            L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-                attribution: '© OpenStreetMap contributors',
-                maxZoom: 19
-            }).addTo(map);
-        
-            // Add user location marker if available
-            if (userLocation) {
-                userMarker = L.marker([userLocation.lat, userLocation.lng], {
-                    icon: L.icon({
-                        iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-blue.png',
-                        shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
-                        iconSize: [25, 41],
-                        iconAnchor: [12, 41],
-                        popupAnchor: [1, -34],
-                        shadowSize: [41, 41]
+        // Handle worker accept/reject actions
+        function handleWorkerAction(workerId, action) {
+            if (action === 'accept') {
+                // Handle accept action
+                if (confirm('Are you sure you want to accept this worker?')) {
+                    // Send request to server
+                    fetch(`/worker/client-action/${workerId}/accept`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        }
                     })
-                }).addTo(map)
-                .bindPopup('<b>Your Location</b>').openPopup();
-            }
-        
-            // Load workers from API
-            loadWorkers();
-        }
-    
-        function loadWorkers() {
-            // Get user location for nearby search
-            let url = '/public/api/workers/map';
-            if (userLocation) {
-                url += `?lat=${userLocation.lat}&lng=${userLocation.lng}&radius=50`;
-            }
-        
-            // Fetch workers from API
-            fetch(url)
-                .then(response => response.json())
-                .then(workers => {
-                    if (workers.success === false) {
-                        console.error('Error:', workers.message);
-                        return;
-                    }
-        
-                    workers.forEach(worker => {
-                        if (worker.lat && worker.lng) {
-                            addWorkerMarker(worker);
-                        }
-                    });
-        
-                    if (markers.length > 0) {
-                        const group = new L.featureGroup(markers);
-                        if (userMarker) {
-                            group.addLayer(userMarker);
-                        }
-                        map.fitBounds(group.getBounds().pad(0.1));
-                    } else {
-                        // If no workers found, show message
-                        L.popup()
-                            .setLatLng([map.getCenter().lat, map.getCenter().lng])
-                            .setContent('<p>No workers found in this area.</p>')
-                            .openOn(map);
-                    }
-                })
-                .catch(error => {
-                    console.error('Error loading workers:', error);
-                });
-        }
-    
-        function addWorkerMarker(worker) {
-            const customIcon = L.divIcon({
-                className: 'custom-worker-marker',
-                html: `<div style="background-color: #007bff; color: white; border-radius: 50%; width: 40px; height: 40px; display: flex; align-items: center; justify-content: center; font-weight: bold; border: 3px solid white; box-shadow: 0 2px 5px rgba(0,0,0,0.3);">
-                        <span>${worker.rating ? worker.rating.toFixed(1) : 'N/A'}</span>
-                      </div>` ,
-                iconSize: [40, 40],
-                iconAnchor: [20, 40],
-                popupAnchor: [0, -40]
-            });
-        
-            const marker = L.marker([worker.lat, worker.lng], { icon: customIcon })
-                .addTo(map)
-                .bindPopup(`
-                    <div style="min-width: 200px;">
-                        <h6 style="margin: 0 0 5px 0;">${worker.name}</h6>
-                        <p style="margin: 0 0 5px 0; color: #666;">
-                            <i class="bi bi-star-fill" style="color: #ffc107;"></i> ${worker.rating ? worker.rating.toFixed(1) : 'N/A'} Rating
-                        </p>
-                        <p style="margin: 0 0 5px 0; color: #666;">
-                            <i class="bi bi-geo-alt"></i> ${worker.city || 'N/A'}
-                        </p>
-                        ${worker.serviceAreas && worker.serviceAreas.length > 0 ? `
-                        <p style="margin: 0 0 5px 0; color: #666;">
-                            <i class="bi bi-pin-map"></i> Serves: 
-                            ${worker.serviceAreas.slice(0, 2).map((area, index) => 
-                              `${area.city}${index < worker.serviceAreas.slice(0, 2).length - 1 ? ', ' : ''}`
-                            ).join('')}
-                            ${worker.serviceAreas.length > 2 ? ` (+${worker.serviceAreas.length - 2} more)` : ''}
-                        </p>` : ''}
-                        <p style="margin: 0 0 10px 0; color: #666;">
-                            <strong>$${worker.rate || 'N/A'}</strong>/hour
-                        </p>
-                        <a href="/client/worker/${worker.id}" class="btn btn-primary btn-sm" style="width: 100%;">
-                            View Profile
-                        </a>
-                    </div>
-                `);
-        
-            marker.on('click', function() {
-                map.setView([worker.lat, worker.lng], 15);
-            });
-        
-            markers.push(marker);
-        }
-
-        // Locate button
-        document.getElementById('locateBtn').addEventListener('click', () => {
-            if (navigator.geolocation) {
-                navigator.geolocation.getCurrentPosition(
-                    (position) => {
-                        const lat = position.coords.latitude;
-                        const lng = position.coords.longitude;
-                        
-                        if (userMarker) {
-                            userMarker.setLatLng([lat, lng]);
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            alert('Worker accepted successfully! A notification has been sent to the client.');
+                            // Optionally reload the page or update UI
                         } else {
-                            userMarker = L.marker([lat, lng], {
-                                icon: L.icon({
-                                    iconUrl: 'https://raw.githubusercontent.com/pointhi/leaflet-color-markers/master/img/marker-icon-blue.png',
-                                    shadowUrl: 'https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/images/marker-shadow.png',
-                                    iconSize: [25, 41],
-                                    iconAnchor: [12, 41],
-                                    popupAnchor: [1, -34],
-                                    shadowSize: [41, 41]
-                                })
-                            }).addTo(map)
-                            .bindPopup('<b>Your Location</b>').openPopup();
+                            alert('Error: ' + data.message);
                         }
-                        
-                        map.setView([lat, lng], 15);
-                    },
-                    () => {
-                        alert('Unable to get your location. Please enable location services.');
-                    }
-                );
-            } else {
-                alert('Geolocation is not supported by your browser.');
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        alert('An error occurred while accepting the worker.');
+                    });
+                }
+            } else if (action === 'reject') {
+                // Handle reject action
+                const reason = prompt('Please provide a reason for rejecting this worker:');
+                if (reason !== null) { // User didn't cancel the prompt
+                    // Send request to server
+                    fetch(`/worker/client-action/${workerId}/reject`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ reason: reason })
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            alert(`Worker rejected with reason: ${reason}. A notification has been sent to the client.`);
+                            // Optionally reload the page or update UI
+                        } else {
+                            alert('Error: ' + data.message);
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        alert('An error occurred while rejecting the worker.');
+                    });
+                }
             }
-        });
-
-        // Refresh button
-        document.getElementById('refreshBtn').addEventListener('click', () => {
-            if (map) {
-                markers.forEach(marker => map.removeLayer(marker));
-                markers = [];
-                loadWorkers();
-            }
-        });
-        // View toggle
-        const listViewBtn = document.getElementById('listViewBtn');
-        const mapViewBtn = document.getElementById('mapViewBtn');
-        const listView = document.getElementById('listView');
-        const mapView = document.getElementById('mapView');
-
-        listViewBtn.addEventListener('click', () => {
-            listViewBtn.classList.add('active');
-            mapViewBtn.classList.remove('active');
-            listView.style.display = 'block';
-            mapView.style.display = 'none';
-        });
-
-        mapViewBtn.addEventListener('click', () => {
-            mapViewBtn.classList.add('active');
-            listViewBtn.classList.remove('active');
-            listView.style.display = 'none';
-            mapView.style.display = 'block';
-            if (!map) {
-                // Ensure the map container is visible before initializing
-                setTimeout(() => {
-                    const mapContainer = document.getElementById('map');
-                    if (mapContainer && mapContainer.offsetWidth > 0 && mapContainer.offsetHeight > 0) {
-                        initMap();
-                    } else {
-                        console.warn('Map container not ready, retrying...');
-                        // Retry after a longer delay
-                        setTimeout(() => {
-                            if (!map) initMap();
-                        }, 300);
-                    }
-                }, 50);
-            }
-        });
+        }
     </script>
 </body>
 </html>

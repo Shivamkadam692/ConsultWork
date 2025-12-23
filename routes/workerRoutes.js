@@ -18,6 +18,9 @@ router.post('/profile', uploadSingle('profileImage'), workerController.updatePro
 // Service requests
 router.get('/requests', workerController.viewRequests);
 
+// Accept/reject client from search
+router.post('/client-action/:id/:action', workerController.handleClientAction);
+
 // Earnings
 router.get('/earnings', workerController.viewEarnings);
 
